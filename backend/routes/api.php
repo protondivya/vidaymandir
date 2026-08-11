@@ -6,6 +6,10 @@ use App\Http\Controllers\Api\Auth\LogoutController;
 use App\Http\Controllers\Api\Auth\MeController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\Auth\RegisterController;
+use App\Http\Controllers\Api\Author\AuthorController;
+use App\Http\Controllers\Api\Book\BookController;
+use App\Http\Controllers\Api\Category\CategoryController;
+use App\Http\Controllers\Api\LicenseType\LicenseTypeController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -35,4 +39,43 @@ Route::prefix('v1')->group(function (): void {
         Route::get('me', MeController::class)
             ->middleware('auth:sanctum');
     });
+
+    Route::get('books', [BookController::class, 'index']);
+    Route::get('books/{book}', [BookController::class, 'show']);
+
+    Route::get('admin/books', [BookController::class, 'adminIndex'])
+        ->middleware(['auth:sanctum', 'role:librarian']);
+
+    Route::post('books', [BookController::class, 'store'])
+        ->middleware(['auth:sanctum', 'role:librarian']);
+
+    Route::put('books/{book}', [BookController::class, 'update'])
+        ->middleware(['auth:sanctum', 'role:librarian']);
+
+    Route::delete('books/{book}', [BookController::class, 'destroy'])
+        ->middleware(['auth:sanctum', 'role:librarian']);
+
+    Route::get('categories', [CategoryController::class, 'index']);
+    Route::get('categories/{category}/books', [CategoryController::class, 'books']);
+
+    Route::post('categories', [CategoryController::class, 'store'])
+        ->middleware(['auth:sanctum', 'role:librarian']);
+
+    Route::put('categories/{category}', [CategoryController::class, 'update'])
+        ->middleware(['auth:sanctum', 'role:librarian']);
+
+    Route::delete('categories/{category}', [CategoryController::class, 'destroy'])
+        ->middleware(['auth:sanctum', 'role:admin']);
+
+    Route::get('authors', [AuthorController::class, 'index']);
+    Route::post('authors', [AuthorController::class, 'store'])
+        ->middleware(['auth:sanctum', 'role:librarian']);
+
+    Route::put('authors/{author}', [AuthorController::class, 'update'])
+        ->middleware(['auth:sanctum', 'role:librarian']);
+
+    Route::delete('authors/{author}', [AuthorController::class, 'destroy'])
+        ->middleware(['auth:sanctum', 'role:librarian']);
+
+    Route::get('license-types', [LicenseTypeController::class, 'index']);
 });

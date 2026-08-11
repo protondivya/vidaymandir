@@ -11,10 +11,10 @@ class ApiResponse
     /**
      * Return a successful JSON payload.
      *
-     * @param  array<string, mixed>|null  $data
+     * @param  array<string, mixed>|object|null  $data
      * @param  array<string, mixed>  $meta
      */
-    public static function success(?array $data = null, int $status = 200, array $meta = []): JsonResponse
+    public static function success(mixed $data = null, int $status = 200, array $meta = []): JsonResponse
     {
         $payload = ['success' => true];
 
