@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\Author\AuthorController;
 use App\Http\Controllers\Api\Book\BookController;
+use App\Http\Controllers\Api\Book\BookPdfController;
+use App\Http\Controllers\Api\Book\ReadingProgressController;
 use App\Http\Controllers\Api\Category\CategoryController;
 use App\Http\Controllers\Api\LicenseType\LicenseTypeController;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +44,21 @@ Route::prefix('v1')->group(function (): void {
 
     Route::get('books', [BookController::class, 'index']);
     Route::get('books/{book}', [BookController::class, 'show']);
+
+    Route::get('books/{book}/pdf', [BookPdfController::class, 'view'])
+        ->middleware('auth:sanctum');
+
+    Route::get('books/{book}/download', [BookPdfController::class, 'download'])
+        ->middleware('auth:sanctum');
+
+    Route::get('books/{book}/progress', [ReadingProgressController::class, 'show'])
+        ->middleware('auth:sanctum');
+
+    Route::put('books/{book}/progress', [ReadingProgressController::class, 'update'])
+        ->middleware('auth:sanctum');
+
+    Route::post('books/{book}/pdf', [BookPdfController::class, 'upload'])
+        ->middleware(['auth:sanctum', 'role:librarian']);
 
     Route::get('admin/books', [BookController::class, 'adminIndex'])
         ->middleware(['auth:sanctum', 'role:librarian']);

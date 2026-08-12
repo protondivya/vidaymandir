@@ -1,11 +1,34 @@
 import { Link, useParams } from 'react-router-dom'
 import { useBook } from '../features/books/hooks'
+import { useDownloadBookPdf } from '../features/reader/hooks'
+import { useAuthStore } from '../stores/authStore'
 import { Spinner } from '../components/ui/Spinner'
 import { Alert } from '../components/ui/Alert'
 
 export function BookDetailPage() {
   const { slug } = useParams()
   const bookQuery = useBook(slug)
+  const download = useDownloadBookPdf()
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+
+  const handleDownload = () => {
+    if (!slug || !bookQuery.data) {
+      return
+    }
+
+    download.mutate(slug, {
+      onSuccess: (blob) => {
+        const url = URL.createObjectURL(blob)
+        const anchor = document.createElement('a')
+        anchor.href = url
+        anchor.download = `${bookQuery.data.slug}-download.pdf`
+        document.body.appendChild(anchor)
+        anchor.click()
+        anchor.remove()
+        URL.revokeObjectURL(url)
+      },
+    })
+  }
 
   if (bookQuery.isPending) {
     return (
@@ -69,6 +92,49 @@ export function BookDetailPage() {
                 </Link>
               ))}
             </div>
+          ) : null}
+
+          {book.has_pdf ? (
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              {isAuthenticated ? (
+                <Link to={`/books/${book.slug}/read`} className="btn-primary">
+                  Read online
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  state={{ from: `/books/${book.slug}/read` }}
+                  className="btn-primary"
+                >
+                  Sign in to read
+                </Link>
+              )}
+
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={!book.is_downloadable || download.isPending}
+                  onClick={handleDownload}
+                  title={
+                    book.is_downloadable
+                      ? 'Download a watermarked PDF'
+                      : 'Downloading is disabled for this book'
+                  }
+                >
+                  {download.isPending ? <Spinner /> : null}
+                  Download PDF
+                </button>
+              ) : (
+                <Link to="/login" state={{ from: `/books/${book.slug}` }} className="btn-secondary">
+                  Sign in to download
+                </Link>
+              )}
+            </div>
+          ) : null}
+
+          {download.isError ? (
+            <p className="mt-3 text-sm text-red-600">This book could not be downloaded right now.</p>
           ) : null}
         </div>
       </div>

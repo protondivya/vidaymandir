@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Book extends Model
@@ -31,6 +32,8 @@ class Book extends Model
         'page_count',
         'word_count',
         'cover_image_url',
+        'pdf_file',
+        'is_downloadable',
         'license_type_id',
         'rights_source',
         'status',
@@ -51,6 +54,7 @@ class Book extends Model
             'page_count' => 'integer',
             'word_count' => 'integer',
             'view_count' => 'integer',
+            'is_downloadable' => 'boolean',
             'published_at' => 'datetime',
         ];
     }
@@ -107,6 +111,23 @@ class Book extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', BookStatus::Active);
+    }
+
+    /**
+     * Whether the book has a stored PDF file on disk.
+     */
+    public function hasPdf(): bool
+    {
+        return $this->pdf_file !== null
+            && Storage::disk('local')->exists($this->pdf_file);
+    }
+
+    /**
+     * The absolute path to the stored PDF file, or null when absent.
+     */
+    public function pdfPath(): ?string
+    {
+        return $this->hasPdf() ? Storage::disk('local')->path($this->pdf_file) : null;
     }
 
     /**

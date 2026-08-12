@@ -24,6 +24,8 @@ class BookListResource extends JsonResource
             'slug' => $this->slug,
             'language' => $this->language,
             'cover_image_url' => $this->cover_image_url,
+            'has_pdf' => $this->hasPdf(),
+            'is_downloadable' => $this->is_downloadable,
             'status' => $this->status->value,
             'view_count' => $this->view_count,
             'published_at' => $this->published_at?->toIso8601String(),
