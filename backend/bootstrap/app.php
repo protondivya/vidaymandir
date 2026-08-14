@@ -3,11 +3,14 @@
 use App\Http\Middleware\EnsureEmailVerified;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\ForceJsonResponse;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -28,12 +31,16 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->prependToPriorityList(
-            \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            AuthenticatesRequests::class,
             ForceJsonResponse::class,
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function (ValidationException $e) {
+        $exceptions->render(function (ValidationException $e, $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'The given data was invalid.',
@@ -41,21 +48,33 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 422);
         });
 
-        $exceptions->render(function (Illuminate\Auth\AuthenticationException $e) {
+        $exceptions->render(function (AuthenticationException $e, $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'Authentication required.',
             ], 401);
         });
 
-        $exceptions->render(function (Illuminate\Auth\Access\AuthorizationException $e) {
+        $exceptions->render(function (AuthorizationException $e, $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'You do not have permission to perform this action.',
             ], 403);
         });
 
-        $exceptions->render(function (Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
+        $exceptions->render(function (HttpExceptionInterface $e, $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage() ?: 'An error occurred.',

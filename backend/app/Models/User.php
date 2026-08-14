@@ -4,13 +4,18 @@ namespace App\Models;
 
 use App\Enums\UserRole;
 use Database\Factories\UserFactory;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasAvatar;
+use Filament\Models\Contracts\HasName;
+use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
@@ -59,7 +64,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Create a Sanctum access token for this user.
      *
-     * @return array{token: string, expires_at: \Illuminate\Support\Carbon|null}
+     * @return array{token: string, expires_at: Carbon|null}
      */
     public function createAccessToken(): array
     {
@@ -107,5 +112,29 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isAdmin(): bool
     {
         return $this->role->can('role:admin');
+    }
+
+    /**
+     * Determine whether the user may access the Filament admin panel.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->is_active && $this->role->can('role:librarian');
+    }
+
+    /**
+     * The display name used by the Filament panel.
+     */
+    public function getFilamentName(): string
+    {
+        return $this->display_name;
+    }
+
+    /**
+     * The avatar URL used by the Filament panel.
+     */
+    public function getFilamentAvatarUrl(): ?string
+    {
+        return $this->avatar_url;
     }
 }
