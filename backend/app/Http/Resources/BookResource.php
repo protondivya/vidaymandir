@@ -27,6 +27,8 @@ class BookResource extends JsonResource
             'page_count' => $this->page_count,
             'word_count' => $this->word_count,
             'cover_image_url' => $this->cover_image_url,
+            'has_pdf' => $this->hasPdf(),
+            'is_downloadable' => $this->is_downloadable,
             'rights_source' => $this->rights_source,
             'status' => $this->status->value,
             'view_count' => $this->view_count,

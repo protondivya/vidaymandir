@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { useBook, useCreateBook, useLicenseTypes, useUpdateBook } from '../../books/hooks'
 import { useAuthors } from '../../authors/hooks'
 import { useCategories } from '../../categories/hooks'
+import { useUploadBookPdf } from '../../reader/hooks'
 import { TextInput } from '../../../components/ui/TextInput'
 import { TextArea } from '../../../components/ui/TextArea'
 import { Select } from '../../../components/ui/Select'
@@ -31,6 +32,7 @@ const bookFormSchema = z.object({
     })
     .optional(),
   rights_source: z.string().optional(),
+  is_downloadable: z.boolean(),
   license_type_id: z.string().min(1, 'Select a license type'),
   status: z.enum(['draft', 'active', 'deactivated']),
   authors: z.array(z.string()).min(1, 'Select at least one author'),
@@ -55,6 +57,10 @@ export function AdminBookFormPage() {
   const { data: licenseTypes } = useLicenseTypes()
   const { data: authorsData } = useAuthors({ limit: 100 })
   const { data: categories } = useCategories()
+  const uploadPdf = useUploadBookPdf()
+
+  const pdfInputRef = useRef<HTMLInputElement>(null)
+  const [pdfFile, setPdfFile] = useState<File | null>(null)
 
   const createBook = useCreateBook()
   const updateBook = useUpdateBook()
@@ -77,6 +83,7 @@ export function AdminBookFormPage() {
       word_count: '',
       cover_image_url: '',
       rights_source: '',
+      is_downloadable: true,
       license_type_id: '',
       status: 'draft',
       authors: [],
@@ -94,6 +101,7 @@ export function AdminBookFormPage() {
         word_count: bookQuery.data.word_count ? String(bookQuery.data.word_count) : '',
         cover_image_url: bookQuery.data.cover_image_url ?? '',
         rights_source: bookQuery.data.rights_source ?? '',
+        is_downloadable: bookQuery.data.is_downloadable,
         license_type_id: bookQuery.data.license_type?.id ? String(bookQuery.data.license_type.id) : '',
         status: bookQuery.data.status,
         authors: (bookQuery.data.authors ?? []).map((author) => String(author.id)),
@@ -111,6 +119,7 @@ export function AdminBookFormPage() {
       word_count: values.word_count ? Number(values.word_count) : null,
       cover_image_url: values.cover_image_url || null,
       rights_source: values.rights_source || null,
+      is_downloadable: values.is_downloadable,
       license_type_id: Number(values.license_type_id),
       status: values.status,
       authors: values.authors.map(Number),
@@ -120,10 +129,24 @@ export function AdminBookFormPage() {
     if (isEdit) {
       updateBook.mutate(
         { id: Number(id), input },
-        { onSuccess: () => navigate('/admin/books') },
+        {
+          onSuccess: (book) => {
+            if (pdfFile !== null) {
+              uploadPdf.mutate({ id: book.id, file: pdfFile })
+            }
+            navigate('/admin/books')
+          },
+        },
       )
     } else {
-      createBook.mutate(input, { onSuccess: () => navigate('/admin/books') })
+      createBook.mutate(input, {
+        onSuccess: (book) => {
+          if (pdfFile !== null) {
+            uploadPdf.mutate({ id: book.id, file: pdfFile })
+          }
+          navigate('/admin/books')
+        },
+      })
     }
   }
 
@@ -210,6 +233,17 @@ export function AdminBookFormPage() {
           {...register('rights_source')}
         />
 
+        <label className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+          <input
+            type="checkbox"
+            className="h-4 w-4 accent-brand-600"
+            {...register('is_downloadable')}
+          />
+          <span className="text-sm text-slate-700">
+            Allow readers to download this book (as a watermarked PDF)
+          </span>
+        </label>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <Select
             id="license_type_id"
@@ -274,6 +308,47 @@ export function AdminBookFormPage() {
               ))}
             </div>
           )}
+        </div>
+
+        <div className="w-full rounded-xl border border-slate-200 bg-white p-4">
+          <span className="field-label">PDF file</span>
+          {isEdit && bookQuery.data?.has_pdf ? (
+            <p className="mt-1 text-sm text-emerald-600">A PDF is currently uploaded.</p>
+          ) : (
+            <p className="mt-1 text-sm text-slate-500">No PDF uploaded yet.</p>
+          )}
+
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <input
+              ref={pdfInputRef}
+              type="file"
+              accept="application/pdf,.pdf"
+              className="block w-full max-w-sm text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand-700 hover:file:bg-brand-100"
+              onChange={(event) => setPdfFile(event.target.files?.[0] ?? null)}
+            />
+            {pdfFile !== null ? (
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => {
+                  setPdfFile(null)
+                  if (pdfInputRef.current) {
+                    pdfInputRef.current.value = ''
+                  }
+                }}
+              >
+                Clear
+              </button>
+            ) : null}
+          </div>
+          {pdfFile !== null ? (
+            <p className="mt-2 text-xs text-slate-500">
+              {pdfFile.name} will be uploaded after the book is saved.
+            </p>
+          ) : null}
+          {uploadPdf.isError ? (
+            <p className="mt-2 text-sm text-red-600">The PDF could not be uploaded.</p>
+          ) : null}
         </div>
 
         <div className="flex items-center gap-3 pt-2">

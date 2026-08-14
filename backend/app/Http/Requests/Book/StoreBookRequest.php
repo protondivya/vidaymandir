@@ -28,6 +28,7 @@ class StoreBookRequest extends FormRequest
             'page_count' => ['nullable', 'integer', 'min:1', 'max:2147483647'],
             'word_count' => ['nullable', 'integer', 'min:1', 'max:2147483647'],
             'cover_image_url' => ['nullable', 'string', 'url', 'max:500'],
+            'is_downloadable' => ['sometimes', 'boolean'],
             'license_type_id' => ['required', 'integer', 'exists:license_types,id'],
             'rights_source' => ['nullable', 'string', 'max:500'],
             'status' => ['sometimes', 'string', Rule::in(array_column(BookStatus::cases(), 'value'))],

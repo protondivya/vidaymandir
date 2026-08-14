@@ -119,6 +119,7 @@ class BookController extends Controller
             'page_count' => $data['page_count'] ?? null,
             'word_count' => $data['word_count'] ?? null,
             'cover_image_url' => $data['cover_image_url'] ?? null,
+            'is_downloadable' => $data['is_downloadable'] ?? true,
             'license_type_id' => $data['license_type_id'],
             'rights_source' => $data['rights_source'] ?? null,
             'status' => $status,

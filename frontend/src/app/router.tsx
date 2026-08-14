@@ -8,6 +8,7 @@ import { RequireRole } from '../components/guards/RequireRole'
 import { HomePage } from '../pages/HomePage'
 import { BooksPage } from '../pages/BooksPage'
 import { BookDetailPage } from '../pages/BookDetailPage'
+import { ReadPage } from '../pages/ReadPage'
 import { AccountPage } from '../pages/AccountPage'
 import { AdminBooksPage } from '../features/admin/pages/AdminBooksPage'
 import { AdminBookFormPage } from '../features/admin/pages/AdminBookFormPage'
@@ -48,7 +49,10 @@ export const router = createBrowserRouter([
   },
   {
     element: <RequireAuth />,
-    children: [{ path: 'account', element: <AccountPage /> }],
+    children: [
+      { path: 'account', element: <AccountPage /> },
+      { path: 'books/:slug/read', element: <ReadPage /> },
+    ],
   },
   {
     element: <RequireRole roles={['librarian', 'admin']} />,

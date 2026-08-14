@@ -8,7 +8,9 @@ use App\Models\Book;
 use App\Models\Category;
 use App\Models\LicenseType;
 use App\Models\User;
+use App\Services\BookPdfService;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class DemoCatalogSeeder extends Seeder
@@ -52,14 +54,22 @@ class DemoCatalogSeeder extends Seeder
         ];
 
         foreach ($books as $index => $spec) {
+            $slug = Str::slug($spec['title']);
+            $pdfPath = 'books/'.$slug.'.pdf';
+
+            $pdfs = app(BookPdfService::class);
+            $pdfs->generateDemoPdf($spec['title'], $pdfPath);
+
             $book = Book::create([
                 'title' => $spec['title'],
-                'slug' => Str::slug($spec['title']),
+                'slug' => $slug,
                 'synopsis' => $spec['synopsis'],
                 'language' => 'en',
-                'page_count' => fake()->numberBetween(150, 1200),
+                'page_count' => $pdfs->pageCount(Storage::disk('local')->path($pdfPath)),
                 'word_count' => fake()->numberBetween(40000, 600000),
                 'cover_image_url' => null,
+                'pdf_file' => $pdfPath,
+                'is_downloadable' => true,
                 'license_type_id' => $publicDomain->id,
                 'status' => BookStatus::Active,
                 'view_count' => fake()->numberBetween(0, 10000),

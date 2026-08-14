@@ -46,6 +46,8 @@ export interface Book {
   page_count: number | null
   word_count: number | null
   cover_image_url: string | null
+  has_pdf: boolean
+  is_downloadable: boolean
   rights_source: string | null
   status: BookStatus
   view_count: number
@@ -56,6 +58,13 @@ export interface Book {
   created_by?: number
   authors?: BookAuthor[]
   categories?: BookCategory[]
+}
+
+export interface ReadingProgress {
+  book_id: number
+  current_page: number | null
+  percent: number | null
+  updated_at: string | null
 }
 
 export interface PaginationMeta {
@@ -88,6 +97,7 @@ export interface BookInput {
   page_count?: number | null
   word_count?: number | null
   cover_image_url?: string | null
+  is_downloadable?: boolean
   license_type_id: number
   rights_source?: string | null
   status?: BookStatus
